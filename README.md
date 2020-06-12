@@ -3,6 +3,8 @@
 
 额。。。仅供参考
 
+![image](https://github.com/Venhoe/ADScrollLabelView/blob/master/145432.gif)
+
 使用方法：
 
         let scrollLabelView = AdScrollLabelView.init(frame: CGRect.init(x: 70, y: 100, width: 200, height: 30))

@@ -22,13 +22,27 @@ class AdScrollLabelView: UIView {
     var adTextAlignment:NSTextAlignment = .left
     
     /** 是否显示文字前的图片  默认false显示*/
-    var isHiiddenAdImage = false
+    var isHiddenAdImage = false
     
     /** 轮播间隔时间 默认2*/
     var adTimeInterval:TimeInterval = 3
     
     /** 图片与文字的间距 默认5 不显示图片的话设置也没有用 */
     var margin:CGFloat = 5.0
+    
+    /** 文字滚动方向，默认向上 */
+    private var _scrollDirectUp: Bool = true
+    var scrollDirectUp: Bool {
+        get {
+            return _scrollDirectUp
+        }
+        set {
+            _scrollDirectUp = newValue
+            if !_scrollDirectUp {
+                secondLabel.frame = CGRect.init(x: labelX, y: -self.frame.height, width: self.frame.width - labelX, height: self.frame.height)
+            }
+        }
+    }
     
     /** 需要显示的所有文字 */
     private var adTextArray:Array<String> = Array.init()
@@ -41,8 +55,8 @@ class AdScrollLabelView: UIView {
 
     /** 文字前的图片Image 有个默认图片 */
     lazy final var adImageView:UIImageView = {
-        let _adImageView:UIImageView = UIImageView.init(frame: CGRect.init(x: 0, y: 0, width: 30, height: 15))
-        _adImageView.image =  UIImage.init(named: "特惠") ?? UIImage.init()
+        let _adImageView:UIImageView = UIImageView.init(frame: CGRect.init(x: 10, y: 0, width: 30, height: 20))
+        _adImageView.image = UIImage.init()
         _adImageView.contentMode = .scaleAspectFit
         return _adImageView
     }()
@@ -59,7 +73,7 @@ class AdScrollLabelView: UIView {
     private lazy final var secondLabel:UILabel = {
         let _secondLabel = initAdLabel()
         let labelX = adImageView.frame.maxX + margin
-        _secondLabel.frame = CGRect.init(x: labelX, y: -self.frame.height, width: self.frame.width - labelX, height: self.frame.height)
+        _secondLabel.frame = CGRect.init(x: labelX, y: self.frame.height, width: self.frame.width - labelX, height: self.frame.height)
         let tapGesture: UITapGestureRecognizer = UITapGestureRecognizer(target: self, action: #selector(secondLabelActionTap))
         _secondLabel.addGestureRecognizer(tapGesture)
         return _secondLabel
@@ -68,6 +82,7 @@ class AdScrollLabelView: UIView {
     /** 计时器 */
     private lazy final var timer:Timer = {
         let _timer = Timer.scheduledTimer(timeInterval: adTimeInterval, target: self, selector: #selector(timeRepeat), userInfo: nil, repeats: true)
+        RunLoop.current.add(_timer, forMode: .common)
         return _timer
     }()
     
@@ -82,7 +97,7 @@ class AdScrollLabelView: UIView {
     override func layoutSubviews() {
         super.layoutSubviews()
         //判断是否需要显示图片
-        if isHiiddenAdImage {
+        if isHiddenAdImage {
             labelX = 0
             adImageView.removeFromSuperview()
         }else{
@@ -145,13 +160,24 @@ class AdScrollLabelView: UIView {
             textIndex = 0
         }
         let labelHeight = frame.height
-        let firstLabelY = firstLabel.frame.origin.y == 0 ? labelHeight:0
-        let secondLabelY = secondLabel.frame.origin.y == 0 ? labelHeight:0
+        var firstLabelY = firstLabel.frame.origin.y == 0 ? -labelHeight : 0
+        var secondLabelY = secondLabel.frame.origin.y == 0 ? -labelHeight : 0
+        
+        if !scrollDirectUp {
+            firstLabelY = firstLabel.frame.origin.y == 0 ? labelHeight : 0
+            secondLabelY = secondLabel.frame.origin.y == 0 ? labelHeight : 0
+        }
+        
         UIView.animate(withDuration: 0.3, animations: {
             self.firstLabel.frame.origin.y = firstLabelY
             self.secondLabel.frame.origin.y = secondLabelY
         }) { (bool) in
-            if firstLabelY == 0{
+            
+            if self.textIndex == self.adTextArray.count{
+                self.textIndex = 0
+            }
+            
+            if firstLabelY == 0 {
                 self.secondLabel.frame.origin.y = -secondLabelY
                 self.secondLabel.text = self.adTextArray[self.textIndex]
                 self.secondLabel.tag = self.textIndex + 10000
